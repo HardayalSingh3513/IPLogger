@@ -1,0 +1,256 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #1f2937, #111827);
+  color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ---------- Home page card ---------- */
+.card {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 14px;
+  padding: 36px 32px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+.card h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+}
+
+.subtitle {
+  color: #9ca3af;
+  margin-bottom: 24px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+label {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.input-field,
+.output-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #374151;
+  background: #111827;
+  color: #e5e7eb;
+  font-size: 15px;
+}
+
+.input-field:focus,
+.output-input:focus {
+  outline: none;
+  border-color: #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+}
+
+.output-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.output-input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.info-box {
+  background: #111827;
+  border-radius: 10px;
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #374151;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.value {
+  font-weight: 600;
+  color: #34d399;
+  text-align: right;
+}
+
+.value.small {
+  font-size: 12px;
+  font-weight: 400;
+  color: #d1d5db;
+  word-break: break-all;
+  max-width: 280px;
+}
+
+.notice {
+  font-size: 13px;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.notice.danger {
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.btn {
+  display: inline-block;
+  background: #34d399;
+  color: #064e3b;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.btn:hover {
+  background: #6ee7b7;
+  transform: translateY(-1px);
+}
+
+.btn.small {
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.btn.danger {
+  background: #f87171;
+  color: #7f1d1d;
+}
+
+.btn.danger:hover {
+  background: #fca5a5;
+}
+
+a.short-link {
+  color: #34d399;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+a {
+  color: #a5f3fc;
+}
+a:hover {
+  color: #67e8f9;
+}
+
+/* ---------- Dashboard page ---------- */
+.dashboard {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 14px;
+  padding: 28px;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.status {
+  color: #9ca3af;
+  font-size: 13px;
+  margin: 0 0 12px;
+  min-height: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+thead th {
+  text-align: left;
+  color: #9ca3af;
+  border-bottom: 2px solid #374151;
+  padding: 10px 12px;
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #2d3340;
+  vertical-align: top;
+}
+
+tbody tr:hover {
+  background: rgba(52, 211, 153, 0.05);
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 18px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  color: #34d399;
+}

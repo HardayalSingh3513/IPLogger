@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IP Logger Link Generator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="card">
+    <h1>🔗 Create a Tracking Redirect</h1>
+    <p class="subtitle">Enter a website link and generate a redirect URL that logs visitors before forwarding them.</p>
+
+    {% if error %}
+      <div class="notice danger">{{ error }}</div>
+    {% endif %}
+
+    <form action="/" method="post">
+      <label for="target-url">Website address</label>
+      <input id="target-url" name="target_url" type="text" class="input-field" placeholder="example.com or https://example.com" value="{{ target_url or '' }}" required />
+      <button type="submit" class="btn">Create tracking link</button>
+    </form>
+
+    {% if created_url %}
+      <div class="info-box">
+        <p><strong>Tracking link created:</strong></p>
+        <div class="output-row">
+          <input id="createdLink" class="output-input" readonly value="{{ created_url }}" />
+          <button id="copyBtn" class="btn small">Copy</button>
+        </div>
+        <p class="small">Anyone who visits this link will be logged and then redirected to <a href="{{ target_url }}" target="_blank">{{ target_url }}</a>.</p>
+      </div>
+    {% endif %}
+
+    <p class="notice">
+      Visitors are logged when they use the tracking link. The dashboard stores IP address, browser details, and location info when available.
+    </p>
+
+    <a class="btn" href="/dashboard">View Dashboard →</a>
+  </div>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
