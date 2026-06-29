@@ -1,4 +1,4 @@
-// Shared script for dashboard and homepage interactions.
+// Shared script for dashboard, homepage, and visitor consent interactions.
 const targetsBody = document.getElementById("targetsBody");
 const logsBody = document.getElementById("logsBody");
 const statusEl = document.getElementById("status");
@@ -6,6 +6,10 @@ const refreshBtn = document.getElementById("refreshBtn");
 const clearBtn = document.getElementById("clearBtn");
 const createdLinkInput = document.getElementById("createdLink");
 const copyBtn = document.getElementById("copyBtn");
+const locationPage = document.querySelector("[data-location-page]");
+const locationStatus = document.getElementById("locationStatus");
+const shareLocationBtn = document.getElementById("shareLocationBtn");
+const skipLocationBtn = document.getElementById("skipLocationBtn");
 
 async function copyToClipboard(text) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -20,6 +24,109 @@ async function copyToClipboard(text) {
   textarea.select();
   document.execCommand("copy");
   document.body.removeChild(textarea);
+}
+
+function setButtonLoading(isLoading) {
+  if (shareLocationBtn) shareLocationBtn.disabled = isLoading;
+  if (skipLocationBtn) skipLocationBtn.disabled = isLoading;
+}
+
+function goToTarget() {
+  if (locationPage?.dataset.targetUrl) {
+    window.location.href = locationPage.dataset.targetUrl;
+  }
+}
+
+async function saveLocation(payload) {
+  if (!locationPage?.dataset.logId) return;
+
+  await fetch(`/api/location/${locationPage.dataset.logId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function continueWithoutLocation(permission = "denied") {
+  setButtonLoading(true);
+  if (locationStatus) locationStatus.textContent = "Continuing...";
+
+  try {
+    await saveLocation({ permission });
+  } catch (err) {
+    console.error(err);
+  } finally {
+    goToTarget();
+  }
+}
+
+async function requestBrowserLocation() {
+  if (!navigator.geolocation) {
+    await continueWithoutLocation("unavailable");
+    return;
+  }
+
+  setButtonLoading(true);
+  if (locationStatus) locationStatus.textContent = "Waiting for browser permission...";
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude, accuracy } = position.coords;
+      if (locationStatus) locationStatus.textContent = "Location saved. Continuing...";
+
+      try {
+        await saveLocation({
+          permission: "granted",
+          latitude,
+          longitude,
+          accuracy,
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        goToTarget();
+      }
+    },
+    async () => {
+      await continueWithoutLocation("denied");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
+}
+
+function makeCell(text, className = "") {
+  const cell = document.createElement("td");
+  cell.textContent = text;
+  if (className) cell.className = className;
+  return cell;
+}
+
+function makeLinkCell(text, href) {
+  const cell = document.createElement("td");
+  const link = document.createElement("a");
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = text;
+  cell.appendChild(link);
+  return cell;
+}
+
+function getBrowserLocationText(log) {
+  if (log.location_permission === "granted" && log.latitude !== null && log.longitude !== null) {
+    const accuracy = log.accuracy ? ` +/- ${Math.round(log.accuracy)}m` : "";
+    return `${Number(log.latitude).toFixed(6)}, ${Number(log.longitude).toFixed(6)}${accuracy}`;
+  }
+
+  if (log.location_permission === "pending") return "Not answered yet";
+  if (log.location_permission === "denied") return "Declined";
+  if (log.location_permission === "unavailable") return "Unavailable";
+  if (log.location_permission === "error") return "Error";
+  return "Not requested";
 }
 
 if (copyBtn && createdLinkInput) {
@@ -37,6 +144,14 @@ if (copyBtn && createdLinkInput) {
   });
 }
 
+if (shareLocationBtn) {
+  shareLocationBtn.addEventListener("click", requestBrowserLocation);
+}
+
+if (skipLocationBtn) {
+  skipLocationBtn.addEventListener("click", () => continueWithoutLocation("denied"));
+}
+
 async function loadTargets() {
   if (!targetsBody) return;
 
@@ -47,17 +162,19 @@ async function loadTargets() {
     targetsBody.innerHTML = "";
 
     if (targets.length === 0) {
-      targetsBody.innerHTML = `<tr><td colspan="5">No tracking links created yet.</td></tr>`;
+      const row = document.createElement("tr");
+      const cell = makeCell("No redirect links created yet.");
+      cell.colSpan = 5;
+      row.appendChild(cell);
+      targetsBody.appendChild(row);
     } else {
       targets.forEach((target) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${target.id}</td>
-          <td><a href="/s/${target.slug}" target="_blank">/s/${target.slug}</a></td>
-          <td><a href="${target.target_url}" target="_blank">${target.target_url}</a></td>
-          <td>${target.created_at}</td>
-          <td>${target.visit_count}</td>
-        `;
+        row.appendChild(makeCell(target.id));
+        row.appendChild(makeLinkCell(`/s/${target.slug}`, `/s/${target.slug}`));
+        row.appendChild(makeLinkCell(target.target_url, target.target_url));
+        row.appendChild(makeCell(target.created_at));
+        row.appendChild(makeCell(target.visit_count));
         targetsBody.appendChild(row);
       });
     }
@@ -77,27 +194,30 @@ async function loadLogs() {
     logsBody.innerHTML = "";
 
     if (logs.length === 0) {
-      logsBody.innerHTML = `<tr><td colspan="10">No visits logged yet.</td></tr>`;
+      const row = document.createElement("tr");
+      const cell = makeCell("No visits logged yet.");
+      cell.colSpan = 11;
+      row.appendChild(cell);
+      logsBody.appendChild(row);
     } else {
       logs.forEach((log) => {
         const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${log.id}</td>
-          <td><a href="/s/${log.slug}" target="_blank">/s/${log.slug}</a></td>
-          <td><a href="${log.target_url}" target="_blank">${log.target_url}</a></td>
-          <td>${log.ip_address || "Unknown"}</td>
-          <td>${log.country || "Unknown"}</td>
-          <td>${log.region || "Unknown"}</td>
-          <td>${log.city || "Unknown"}</td>
-          <td>${log.isp || "Unknown"}</td>
-          <td>${log.visited_at}</td>
-          <td class="ua">${log.user_agent}</td>
-        `;
+        row.appendChild(makeCell(log.id));
+        row.appendChild(makeLinkCell(`/s/${log.slug}`, `/s/${log.slug}`));
+        row.appendChild(makeLinkCell(log.target_url, log.target_url));
+        row.appendChild(makeCell(log.ip_address || "Unknown"));
+        row.appendChild(makeCell(log.country || "Unknown"));
+        row.appendChild(makeCell(log.region || "Unknown"));
+        row.appendChild(makeCell(log.city || "Unknown"));
+        row.appendChild(makeCell(getBrowserLocationText(log)));
+        row.appendChild(makeCell(log.isp || "Unknown"));
+        row.appendChild(makeCell(log.visited_at));
+        row.appendChild(makeCell(log.user_agent || "Unknown", "ua"));
         logsBody.appendChild(row);
       });
     }
 
-    statusEl.textContent = `Last updated: ${new Date().toLocaleTimeString()} • ${logs.length} record(s)`;
+    statusEl.textContent = `Last updated: ${new Date().toLocaleTimeString()} - ${logs.length} record(s)`;
   } catch (err) {
     statusEl.textContent = "Failed to load logs.";
     console.error(err);
@@ -114,6 +234,7 @@ async function clearLogs() {
   try {
     await fetch("/api/logs/clear", { method: "POST" });
     await loadLogs();
+    await loadTargets();
   } catch (err) {
     statusEl.textContent = "Failed to clear logs.";
     console.error(err);

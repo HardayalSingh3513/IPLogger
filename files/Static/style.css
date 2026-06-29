@@ -166,6 +166,28 @@ label {
   background: #fca5a5;
 }
 
+.btn.secondary {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+.btn.secondary:hover {
+  background: #4b5563;
+}
+
+.btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+  transform: none;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 a.short-link {
   color: #34d399;
   text-decoration: none;
