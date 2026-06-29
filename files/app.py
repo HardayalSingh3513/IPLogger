@@ -47,9 +47,24 @@ def init_db():
             city TEXT,
             isp TEXT,
             zip TEXT,
+            latitude REAL,
+            longitude REAL,
+            accuracy REAL,
+            location_permission TEXT,
             FOREIGN KEY(target_id) REFERENCES targets(id)
         )
     """)
+    cursor.execute("PRAGMA table_info(visit_logs)")
+    existing_columns = {row[1] for row in cursor.fetchall()}
+    migrations = {
+        "latitude": "ALTER TABLE visit_logs ADD COLUMN latitude REAL",
+        "longitude": "ALTER TABLE visit_logs ADD COLUMN longitude REAL",
+        "accuracy": "ALTER TABLE visit_logs ADD COLUMN accuracy REAL",
+        "location_permission": "ALTER TABLE visit_logs ADD COLUMN location_permission TEXT",
+    }
+    for column, statement in migrations.items():
+        if column not in existing_columns:
+            cursor.execute(statement)
     conn.commit()
     conn.close()
 
@@ -154,9 +169,18 @@ def lookup_location(ip):
 
 
 def get_visitor_ip():
-    forwarded = request.headers.get("X-Forwarded-For", None)
+    forwarded = request.headers.get("X-Forwarded-For")
     if forwarded:
         return forwarded.split(",")[0].strip()
+
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip()
+
+    cf_ip = request.headers.get("CF-Connecting-IP")
+    if cf_ip:
+        return cf_ip.strip()
+
     return request.remote_addr
 
 
@@ -179,8 +203,9 @@ def log_visit(target_id):
             region,
             city,
             isp,
-            zip
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            zip,
+            location_permission
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             target_id,
@@ -192,10 +217,13 @@ def log_visit(target_id):
             location.get("city", ""),
             location.get("isp", ""),
             location.get("zip", ""),
+            "pending",
         ),
     )
+    log_id = cursor.lastrowid
     conn.commit()
     conn.close()
+    return log_id
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -227,8 +255,58 @@ def redirect_link(slug):
     if not target:
         abort(404)
 
-    log_visit(target["id"])
-    return redirect(target["target_url"])
+    log_id = log_visit(target["id"])
+    return render_template(
+        "consent.html",
+        log_id=log_id,
+        target_url=target["target_url"],
+    )
+
+
+@app.route("/api/location/<int:log_id>", methods=["POST"])
+def api_location(log_id):
+    payload = request.get_json(silent=True) or {}
+    permission = payload.get("permission", "unavailable")
+    latitude = payload.get("latitude")
+    longitude = payload.get("longitude")
+    accuracy = payload.get("accuracy")
+
+    if permission not in {"granted", "denied", "unavailable", "error"}:
+        permission = "unavailable"
+
+    if permission == "granted":
+        try:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            accuracy = float(accuracy) if accuracy is not None else None
+        except (TypeError, ValueError):
+            return jsonify({"error": "Invalid location values."}), 400
+    else:
+        latitude = None
+        longitude = None
+        accuracy = None
+
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        UPDATE visit_logs
+        SET latitude = ?,
+            longitude = ?,
+            accuracy = ?,
+            location_permission = ?
+        WHERE id = ?
+        """,
+        (latitude, longitude, accuracy, permission, log_id),
+    )
+    conn.commit()
+    updated = cursor.rowcount
+    conn.close()
+
+    if updated == 0:
+        abort(404)
+
+    return jsonify({"status": "saved"})
 
 
 @app.route("/dashboard")
@@ -261,6 +339,10 @@ def api_logs():
             v.country,
             v.isp,
             v.zip,
+            v.latitude,
+            v.longitude,
+            v.accuracy,
+            v.location_permission,
             v.visited_at,
             v.user_agent
         FROM visit_logs v
@@ -284,8 +366,12 @@ def api_logs():
                 "country": row[6] or "",
                 "isp": row[7] or "",
                 "zip": row[8] or "",
-                "visited_at": row[9] or "",
-                "user_agent": row[10] or "",
+                "latitude": row[9],
+                "longitude": row[10],
+                "accuracy": row[11],
+                "location_permission": row[12] or "",
+                "visited_at": row[13] or "",
+                "user_agent": row[14] or "",
             }
         )
 

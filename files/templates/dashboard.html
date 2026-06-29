@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - IP Logger</title>
+  <title>Dashboard - Visit Logger</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
 <body>
   <div class="dashboard">
     <div class="dashboard-header">
-      <h1>📊 Redirect Visit Logs</h1>
+      <h1>Redirect Visit Logs</h1>
       <div class="actions">
-        <button id="refreshBtn" class="btn small">⟳ Refresh</button>
-        <button id="clearBtn" class="btn small danger">🗑 Clear logs</button>
+        <button id="refreshBtn" class="btn small">Refresh</button>
+        <button id="clearBtn" class="btn small danger">Clear logs</button>
       </div>
     </div>
 
@@ -20,17 +20,17 @@
 
     {% if created_url %}
       <div id="newLinkBox" class="info-box">
-        <p><strong>New tracking link created:</strong></p>
+        <p><strong>New redirect link created:</strong></p>
         <div class="output-row">
           <input class="output-input" readonly value="{{ created_url }}" />
           <a class="btn small" href="{{ created_url }}" target="_blank">Open</a>
         </div>
-        <p class="small">Visitors who use this link will be logged and redirected to <a href="{{ target_url }}" target="_blank">{{ target_url }}</a>.</p>
+        <p class="small">Visitors who use this link can share browser location before they are redirected to <a href="{{ target_url }}" target="_blank">{{ target_url }}</a>.</p>
       </div>
     {% endif %}
 
     <div class="table-wrapper">
-      <h2 class="section-title">🔗 Generated Tracking Links</h2>
+      <h2 class="section-title">Generated Redirect Links</h2>
       <table id="targetsTable">
         <thead>
           <tr>
@@ -48,7 +48,7 @@
     </div>
 
     <div class="table-wrapper">
-      <h2 class="section-title">📊 Redirect Visit Logs</h2>
+      <h2 class="section-title">Redirect Visit Logs</h2>
       <table id="logsTable">
         <thead>
           <tr>
@@ -59,6 +59,7 @@
             <th>Country</th>
             <th>Region</th>
             <th>City</th>
+            <th>Browser Location</th>
             <th>ISP</th>
             <th>Visited At</th>
             <th>Browser / Device</th>
@@ -70,7 +71,7 @@
       </table>
     </div>
 
-    <a class="back-link" href="/">← Back to home</a>
+    <a class="back-link" href="/">Back to home</a>
   </div>
 
   <script src="{{ url_for('static', filename='script.js') }}"></script>
